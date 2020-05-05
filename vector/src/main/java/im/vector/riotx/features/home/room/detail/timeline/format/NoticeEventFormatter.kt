@@ -136,7 +136,7 @@ class NoticeEventFormatter @Inject constructor(private val sessionHolder: Active
         return when {
             EventType.CALL_INVITE == event.type -> {
                 val content = event.getClearContent().toModel<CallInviteContent>() ?: return null
-                val isVideoCall = content.offer.sdp == CallInviteContent.Offer.SDP_VIDEO
+                val isVideoCall = content.offer?.sdp == CallInviteContent.Offer.SDP_VIDEO
                 return if (isVideoCall) {
                     sp.getString(R.string.notice_placed_video_call, senderName)
                 } else {

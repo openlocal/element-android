@@ -57,7 +57,8 @@ internal class DefaultSendService @AssistedInject constructor(
         private val localEchoEventFactory: LocalEchoEventFactory,
         private val cryptoService: CryptoService,
         private val taskExecutor: TaskExecutor,
-        private val localEchoRepository: LocalEchoRepository
+        private val localEchoRepository: LocalEchoRepository,
+        private val roomEventSender: RoomEventSender
 ) : SendService {
 
     @AssistedInject.Factory
@@ -93,20 +94,6 @@ internal class DefaultSendService @AssistedInject constructor(
             createLocalEcho(it)
         }
         return sendEvent(event)
-    }
-
-    private fun sendEvent(event: Event): Cancelable {
-        // Encrypted room handling
-        return if (cryptoService.isRoomEncrypted(roomId)) {
-            Timber.v("Send event in encrypted room")
-            val encryptWork = createEncryptEventWork(event, true)
-            // Note that event will be replaced by the result of the previous work
-            val sendWork = createSendEventWork(event, false)
-            timelineSendEventWorkCommon.postSequentialWorks(roomId, encryptWork, sendWork)
-        } else {
-            val sendWork = createSendEventWork(event, true)
-            timelineSendEventWorkCommon.postWork(roomId, sendWork)
-        }
     }
 
     override fun sendMedias(attachments: List<ContentAttachmentData>,
@@ -253,32 +240,16 @@ internal class DefaultSendService @AssistedInject constructor(
         return cancelableBag
     }
 
+    private fun sendEvent(event: Event): Cancelable {
+        return roomEventSender.sendEvent(event)
+    }
+
     private fun createLocalEcho(event: Event) {
         localEchoEventFactory.createLocalEcho(event)
     }
 
     private fun buildWorkName(identifier: String): String {
         return "${roomId}_$identifier"
-    }
-
-    private fun createEncryptEventWork(event: Event, startChain: Boolean): OneTimeWorkRequest {
-        // Same parameter
-        val params = EncryptEventWorker.Params(sessionId, event)
-        val sendWorkData = WorkerParamsFactory.toData(params)
-
-        return workManagerProvider.matrixOneTimeWorkRequestBuilder<EncryptEventWorker>()
-                .setConstraints(WorkManagerProvider.workConstraints)
-                .setInputData(sendWorkData)
-                .startChain(startChain)
-                .setBackoffCriteria(BackoffPolicy.LINEAR, WorkManagerProvider.BACKOFF_DELAY, TimeUnit.MILLISECONDS)
-                .build()
-    }
-
-    private fun createSendEventWork(event: Event, startChain: Boolean): OneTimeWorkRequest {
-        val sendContentWorkerParams = SendEventWorker.Params(sessionId, event)
-        val sendWorkData = WorkerParamsFactory.toData(sendContentWorkerParams)
-
-        return timelineSendEventWorkCommon.createWork<SendEventWorker>(sendWorkData, startChain)
     }
 
     private fun createRedactEventWork(event: Event, reason: String?): OneTimeWorkRequest {

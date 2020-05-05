@@ -33,6 +33,7 @@ import im.vector.matrix.android.api.crypto.MXCryptoConfig
 import im.vector.matrix.android.api.session.InitialSyncProgressService
 import im.vector.matrix.android.api.session.Session
 import im.vector.matrix.android.api.session.accountdata.AccountDataService
+import im.vector.matrix.android.api.session.call.CallService
 import im.vector.matrix.android.api.session.homeserver.HomeServerCapabilitiesService
 import im.vector.matrix.android.api.session.securestorage.SecureStorageService
 import im.vector.matrix.android.api.session.securestorage.SharedSecretStorageService
@@ -58,6 +59,8 @@ import im.vector.matrix.android.internal.network.NetworkConnectivityChecker
 import im.vector.matrix.android.internal.network.PreferredNetworkCallbackStrategy
 import im.vector.matrix.android.internal.network.RetrofitFactory
 import im.vector.matrix.android.internal.network.interceptors.CurlLoggingInterceptor
+import im.vector.matrix.android.internal.session.call.CallEventObserver
+import im.vector.matrix.android.internal.session.call.DefaultCallService
 import im.vector.matrix.android.internal.session.group.GroupSummaryUpdater
 import im.vector.matrix.android.internal.session.homeserver.DefaultHomeServerCapabilitiesService
 import im.vector.matrix.android.internal.session.room.EventRelationsAggregationUpdater
@@ -253,6 +256,10 @@ internal abstract class SessionModule {
 
     @Binds
     @IntoSet
+    abstract fun bindCallEventObserver(callEventObserver: CallEventObserver): LiveEntityObserver
+
+    @Binds
+    @IntoSet
     abstract fun bindRoomTombstoneEventLiveObserver(roomTombstoneEventLiveObserver: RoomTombstoneEventLiveObserver): LiveEntityObserver
 
     @Binds
@@ -277,4 +284,7 @@ internal abstract class SessionModule {
 
     @Binds
     abstract fun bindSharedSecretStorageService(service: DefaultSharedSecretStorageService): SharedSecretStorageService
+
+    @Binds
+    abstract fun bindCallService(service:DefaultCallService): CallService
 }

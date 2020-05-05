@@ -4,6 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <item
+        android:id="@+id/voip_call"
+        android:icon="@drawable/ic_phone"
+        android:title="@string/call"
+        android:visible="false"
+        app:showAsAction="always"
+        tools:visible="true" />
+
+    <item
         android:id="@+id/resend_all"
         android:icon="@drawable/ic_refresh_cw"
         android:title="@string/room_prompt_resend"
