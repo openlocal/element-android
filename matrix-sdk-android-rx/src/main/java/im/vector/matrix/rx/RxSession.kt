@@ -21,6 +21,7 @@ import im.vector.matrix.android.api.session.Session
 import im.vector.matrix.android.api.session.crypto.crosssigning.MXCrossSigningInfo
 import im.vector.matrix.android.api.session.group.GroupSummaryQueryParams
 import im.vector.matrix.android.api.session.group.model.GroupSummary
+import im.vector.matrix.android.api.session.identity.ThreePid
 import im.vector.matrix.android.api.session.pushers.Pusher
 import im.vector.matrix.android.api.session.room.RoomSummaryQueryParams
 import im.vector.matrix.android.api.session.room.model.RoomSummary
@@ -31,6 +32,8 @@ import im.vector.matrix.android.api.util.JsonDict
 import im.vector.matrix.android.api.util.Optional
 import im.vector.matrix.android.api.util.toOptional
 import im.vector.matrix.android.internal.crypto.model.CryptoDeviceInfo
+import im.vector.matrix.android.internal.crypto.model.rest.DeviceInfo
+import im.vector.matrix.android.internal.crypto.store.PrivateKeysInfo
 import im.vector.matrix.android.internal.session.sync.model.accountdata.UserAccountDataEvent
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -58,6 +61,13 @@ class RxSession(private val session: Session) {
                 }
     }
 
+    fun liveMyDeviceInfo(): Observable<List<DeviceInfo>> {
+        return session.cryptoService().getLiveMyDevicesInfo().asObservable()
+                .startWithCallable {
+                    session.cryptoService().getMyDevicesInfo()
+                }
+    }
+
     fun liveSyncState(): Observable<SyncState> {
         return session.getSyncStateLive().asObservable()
     }
@@ -81,8 +91,13 @@ class RxSession(private val session: Session) {
         return session.getIgnoredUsersLive().asObservable()
     }
 
-    fun livePagedUsers(filter: String? = null): Observable<PagedList<User>> {
-        return session.getPagedUsersLive(filter).asObservable()
+    fun livePagedUsers(filter: String? = null, excludedUserIds: Set<String>? = null): Observable<PagedList<User>> {
+        return session.getPagedUsersLive(filter, excludedUserIds).asObservable()
+    }
+
+    fun liveThreePIds(refreshData: Boolean): Observable<List<ThreePid>> {
+        return session.getThreePidsLive(refreshData).asObservable()
+                .startWithCallable { session.getThreePids() }
     }
 
     fun createRoom(roomParams: CreateRoomParams): Single<String> = singleBuilder {
@@ -120,6 +135,13 @@ class RxSession(private val session: Session) {
         return session.cryptoService().crossSigningService().getLiveCrossSigningKeys(userId).asObservable()
                 .startWithCallable {
                     session.cryptoService().crossSigningService().getUserCrossSigningKeys(userId).toOptional()
+                }
+    }
+
+    fun liveCrossSigningPrivateKeys(): Observable<Optional<PrivateKeysInfo>> {
+        return session.cryptoService().crossSigningService().getLiveCrossSigningPrivateKeys().asObservable()
+                .startWithCallable {
+                    session.cryptoService().crossSigningService().getCrossSigningPrivateKeys().toOptional()
                 }
     }
 

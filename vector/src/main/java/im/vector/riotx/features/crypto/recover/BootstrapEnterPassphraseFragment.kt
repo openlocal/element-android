@@ -22,7 +22,6 @@ import android.view.inputmethod.EditorInfo
 import androidx.core.text.toSpannable
 import com.airbnb.mvrx.parentFragmentViewModel
 import com.airbnb.mvrx.withState
-import com.jakewharton.rxbinding3.view.clicks
 import com.jakewharton.rxbinding3.widget.editorActionEvents
 import com.jakewharton.rxbinding3.widget.textChanges
 import im.vector.riotx.R
@@ -83,13 +82,8 @@ class BootstrapEnterPassphraseFragment @Inject constructor(
 //            }
         }
 
-        ssss_view_show_password.clicks()
-                .debounce(300, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    sharedViewModel.handle(BootstrapActions.TogglePasswordVisibility)
-                }
-                .disposeOnDestroyView()
+        ssss_view_show_password.debouncedClicks { sharedViewModel.handle(BootstrapActions.TogglePasswordVisibility) }
+        bootstrapSubmit.debouncedClicks { submit() }
     }
 
     private fun submit() = withState(sharedViewModel) { state ->
@@ -108,8 +102,6 @@ class BootstrapEnterPassphraseFragment @Inject constructor(
     }
 
     override fun invalidate() = withState(sharedViewModel) { state ->
-        super.invalidate()
-
         if (state.step is BootstrapStep.SetupPassphrase) {
             val isPasswordVisible = state.step.isPasswordVisible
             ssss_passphrase_enter_edittext.showPassword(isPasswordVisible, updateCursor = false)

@@ -265,7 +265,7 @@ class RoomDetailFragment @Inject constructor(
         setupNotificationView()
         setupJumpToReadMarkerView()
         setupJumpToBottomView()
-        roomToolbarContentView.setOnClickListener {
+        roomToolbarContentView.debouncedClicks {
             navigator.openRoomProfile(requireActivity(), roomDetailArgs.roomId)
         }
         roomDetailViewModel.subscribe { renderState(it) }
@@ -349,7 +349,7 @@ class RoomDetailFragment @Inject constructor(
 
     private fun setupJumpToBottomView() {
         jumpToBottomView.visibility = View.INVISIBLE
-        jumpToBottomView.setOnClickListener {
+        jumpToBottomView.debouncedClicks {
             roomDetailViewModel.handle(RoomDetailAction.ExitTrackingUnreadMessagesState)
             jumpToBottomView.visibility = View.INVISIBLE
             if (!roomDetailViewModel.timeline.isLive) {
@@ -968,8 +968,8 @@ class RoomDetailFragment @Inject constructor(
                                     .setMessage(
                                             getString(R.string.external_link_confirmation_message, title, url)
                                                     .toSpannable()
-                                                    .colorizeMatchingText(url, colorProvider.getColorFromAttribute(android.R.attr.textColorLink))
-                                                    .colorizeMatchingText(title, colorProvider.getColorFromAttribute(android.R.attr.textColorLink))
+                                                    .colorizeMatchingText(url, colorProvider.getColorFromAttribute(R.attr.riotx_text_primary_body_contrast))
+                                                    .colorizeMatchingText(title, colorProvider.getColorFromAttribute(R.attr.riotx_text_primary_body_contrast))
                                     )
                                     .setPositiveButton(R.string._continue) { _, _ ->
                                         openUrlInExternalBrowser(requireContext(), url)

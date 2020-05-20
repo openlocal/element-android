@@ -1,4 +1,50 @@
-Changes in RiotX 0.19.0 (2020-XX-XX)
+Changes in RiotX 0.21.0 (2020-XX-XX)
+===================================================
+
+Features ✨:
+ - Identity server support (#607)
+ - Switch language support (#41)
+
+Improvements 🙌:
+ - Better connectivity lost indicator when airplane mode is on
+ - Add a setting to hide redacted events (#951)
+
+Bugfix 🐛:
+ - Fix issues with FontScale switch (#69, #645)
+
+Translations 🗣:
+ -
+
+SDK API changes ⚠️:
+ -
+
+Build 🧱:
+ -
+
+Other changes:
+ -
+
+Changes in RiotX 0.20.0 (2020-05-15)
+===================================================
+
+Features ✨:
+ - Add Direct Shortcuts (#652)
+
+Improvements 🙌:
+ - Invite member(s) to an existing room (#1276)
+ - Improve notification accessibility with ticker text (#1226)
+ - Support homeserver discovery from MXID (DISABLED: waiting for design) (#476)
+
+Bugfix 🐛:
+ - Fix | Verify Manually by Text crashes if private SSK not known (#1337)
+ - Sometimes the same device appears twice in the list of devices of a user (#1329)
+ - Random Crashes while doing sth with cross signing keys (#1364)
+ - Crash | crash while restoring key backup (#1366)
+
+SDK API changes ⚠️:
+ - excludedUserIds parameter added to the UserService.getPagedUsersLive() function
+
+Changes in RiotX 0.19.0 (2020-05-04)
 ===================================================
 
 Features ✨:
@@ -28,6 +74,9 @@ Improvements 🙌:
  - Restart broken Olm sessions ([MSC1719](https://github.com/matrix-org/matrix-doc/pull/1719))
  - Cross-Signing | Hide Use recovery key when 4S is not setup (#1007)
  - Cross-Signing | Trust account xSigning keys by entering Recovery Key (select file or copy) #1199
+ - E2E timeline decoration (#1279)
+ - Manage Session Settings / Cross Signing update (#1295)
+ - Cross-Signing | Review sessions toast update old vs new (#1293, #1306)
 
 Bugfix 🐛:
  - Fix summary notification staying after "mark as read"
@@ -43,9 +92,12 @@ Bugfix 🐛:
  - RiotX now uses as many threads as it needs to do work and send messages (#1221)
  - Fix issue with media path (#1227)
  - Add user to direct chat by user id (#1065)
+ - Use correct URL for SSO connection (#1178)
+ - Emoji completion :tada: does not completes to 🎉 like on web (#1285)
+ - Fix bad Shield Logic for DM (#963)
 
 Translations 🗣:
- -
+ - Weblate now create PR directly to RiotX GitHub project
 
 SDK API changes ⚠️:
  - Increase targetSdkVersion to 29
