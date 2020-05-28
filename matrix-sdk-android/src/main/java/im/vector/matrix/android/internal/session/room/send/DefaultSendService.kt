@@ -69,31 +69,40 @@ internal class DefaultSendService @AssistedInject constructor(
     private val workerFutureListenerExecutor = Executors.newSingleThreadExecutor()
 
     override fun sendTextMessage(text: CharSequence, msgType: String, autoMarkdown: Boolean): Cancelable {
-        val event = localEchoEventFactory.createTextEvent(roomId, msgType, text, autoMarkdown).also {
-            createLocalEcho(it)
+        return localEchoEventFactory.createTextEvent(roomId, msgType, text, autoMarkdown)
+                .also { createLocalEcho(it) }
+                .let { sendEvent(it) }
+    }
+
+    // For test only
+    private fun sendTextMessages(text: CharSequence, msgType: String, autoMarkdown: Boolean, times: Int): Cancelable {
+        return CancelableBag().apply {
+            // Send the event several times
+            repeat(times) { i ->
+                localEchoEventFactory.createTextEvent(roomId, msgType, "$text - $i", autoMarkdown)
+                        .also { createLocalEcho(it) }
+                        .let { sendEvent(it) }
+                        .also { add(it) }
+            }
         }
-        return sendEvent(event)
     }
 
     override fun sendFormattedTextMessage(text: String, formattedText: String, msgType: String): Cancelable {
-        val event = localEchoEventFactory.createFormattedTextEvent(roomId, TextContent(text, formattedText), msgType).also {
-            createLocalEcho(it)
-        }
-        return sendEvent(event)
+        return localEchoEventFactory.createFormattedTextEvent(roomId, TextContent(text, formattedText), msgType)
+                .also { createLocalEcho(it) }
+                .let { sendEvent(it) }
     }
 
     override fun sendPoll(question: String, options: List<OptionItem>): Cancelable {
-        val event = localEchoEventFactory.createPollEvent(roomId, question, options).also {
-            createLocalEcho(it)
-        }
-        return sendEvent(event)
+        return localEchoEventFactory.createPollEvent(roomId, question, options)
+                .also { createLocalEcho(it) }
+                .let { sendEvent(it) }
     }
 
     override fun sendOptionsReply(pollEventId: String, optionIndex: Int, optionValue: String): Cancelable {
-        val event = localEchoEventFactory.createOptionsReplyEvent(roomId, pollEventId, optionIndex, optionValue).also {
-            createLocalEcho(it)
-        }
-        return sendEvent(event)
+        return localEchoEventFactory.createOptionsReplyEvent(roomId, pollEventId, optionIndex, optionValue)
+                .also { createLocalEcho(it) }
+                .let { sendEvent(it) }
     }
 
     override fun sendMedias(attachments: List<ContentAttachmentData>,
@@ -106,8 +115,8 @@ internal class DefaultSendService @AssistedInject constructor(
 
     override fun redactEvent(event: Event, reason: String?): Cancelable {
         // TODO manage media/attachements?
-        val redactWork = createRedactEventWork(event, reason)
-        return timelineSendEventWorkCommon.postWork(roomId, redactWork)
+        return createRedactEventWork(event, reason)
+                .let { timelineSendEventWorkCommon.postWork(roomId, it) }
     }
 
     override fun resendTextMessage(localEcho: TimelineEvent): Cancelable? {
@@ -253,12 +262,11 @@ internal class DefaultSendService @AssistedInject constructor(
     }
 
     private fun createRedactEventWork(event: Event, reason: String?): OneTimeWorkRequest {
-        val redactEvent = localEchoEventFactory.createRedactEvent(roomId, event.eventId!!, reason).also {
-            createLocalEcho(it)
-        }
-        val sendContentWorkerParams = RedactEventWorker.Params(sessionId, redactEvent.eventId!!, roomId, event.eventId, reason)
-        val redactWorkData = WorkerParamsFactory.toData(sendContentWorkerParams)
-        return timelineSendEventWorkCommon.createWork<RedactEventWorker>(redactWorkData, true)
+        return localEchoEventFactory.createRedactEvent(roomId, event.eventId!!, reason)
+                .also { createLocalEcho(it) }
+                .let { RedactEventWorker.Params(sessionId, it.eventId!!, roomId, event.eventId, reason) }
+                .let { WorkerParamsFactory.toData(it) }
+                .let { timelineSendEventWorkCommon.createWork<RedactEventWorker>(it, true) }
     }
 
     private fun createUploadMediaWork(allLocalEchos: List<Event>,

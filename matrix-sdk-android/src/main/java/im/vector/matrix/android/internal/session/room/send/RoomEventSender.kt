@@ -52,21 +52,21 @@ internal class RoomEventSender @Inject constructor(
 
     private fun createEncryptEventWork(event: Event, startChain: Boolean): OneTimeWorkRequest {
         // Same parameter
-        val params = EncryptEventWorker.Params(sessionId, event)
-        val sendWorkData = WorkerParamsFactory.toData(params)
-
-        return workManagerProvider.matrixOneTimeWorkRequestBuilder<EncryptEventWorker>()
-                .setConstraints(WorkManagerProvider.workConstraints)
-                .setInputData(sendWorkData)
-                .startChain(startChain)
-                .setBackoffCriteria(BackoffPolicy.LINEAR, WorkManagerProvider.BACKOFF_DELAY, TimeUnit.MILLISECONDS)
-                .build()
+        return EncryptEventWorker.Params(sessionId, event)
+                .let { WorkerParamsFactory.toData(it) }
+                .let {
+                    workManagerProvider.matrixOneTimeWorkRequestBuilder<EncryptEventWorker>()
+                            .setConstraints(WorkManagerProvider.workConstraints)
+                            .setInputData(it)
+                            .startChain(startChain)
+                            .setBackoffCriteria(BackoffPolicy.LINEAR, WorkManagerProvider.BACKOFF_DELAY, TimeUnit.MILLISECONDS)
+                            .build()
+                }
     }
 
     private fun createSendEventWork(event: Event, startChain: Boolean): OneTimeWorkRequest {
-        val sendContentWorkerParams = SendEventWorker.Params(sessionId, event)
-        val sendWorkData = WorkerParamsFactory.toData(sendContentWorkerParams)
-
-        return timelineSendEventWorkCommon.createWork<SendEventWorker>(sendWorkData, startChain)
+        return SendEventWorker.Params(sessionId, event)
+                .let { WorkerParamsFactory.toData(it) }
+                .let { timelineSendEventWorkCommon.createWork<SendEventWorker>(it, startChain) }
     }
 }
