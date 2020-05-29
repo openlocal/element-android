@@ -264,7 +264,6 @@ class RoomDetailFragment @Inject constructor(
         roomToolbarContentView.debouncedClicks {
             navigator.openRoomProfile(requireActivity(), roomDetailArgs.roomId)
         }
-        roomDetailViewModel.subscribe { renderState(it) }
 
         sharedActionViewModel
                 .observe()
@@ -431,24 +430,28 @@ class RoomDetailFragment @Inject constructor(
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.clear_message_queue) {
-            // This a temporary option during dev as it is not super stable
-            // Cancel all pending actions in room queue and post a dummy
-            // Then mark all sending events as undelivered
-            roomDetailViewModel.handle(RoomDetailAction.ClearSendQueue)
-            return true
-        }
-        if (item.itemId == R.id.resend_all) {
-            roomDetailViewModel.handle(RoomDetailAction.ResendAll)
-            return true
-        }
-        if (item.itemId == R.id.voice_call || item.itemId == R.id.video_call) {
-            roomDetailViewModel.getOtherUserIds()?.firstOrNull()?.let {
-                webRtcPeerConnectionManager.startOutgoingCall(requireContext(), roomDetailArgs.roomId, it, item.itemId == R.id.video_call)
+        return when (item.itemId) {
+            R.id.clear_message_queue -> {
+                // This a temporary option during dev as it is not super stable
+                // Cancel all pending actions in room queue and post a dummy
+                // Then mark all sending events as undelivered
+                roomDetailViewModel.handle(RoomDetailAction.ClearSendQueue)
+                true
             }
-            return true
+            R.id.resend_all          -> {
+                roomDetailViewModel.handle(RoomDetailAction.ResendAll)
+                true
+            }
+            R.id.voice_call,
+            R.id.video_call          -> {
+                roomDetailViewModel.getOtherUserIds()?.firstOrNull()?.let {
+                    // TODO CALL We should check/ask for permission here first
+                    webRtcPeerConnectionManager.startOutgoingCall(requireContext(), roomDetailArgs.roomId, it, item.itemId == R.id.video_call)
+                }
+                true
+            }
+            else                     -> super.onOptionsItemSelected(item)
         }
-        return super.onOptionsItemSelected(item)
     }
 
     private fun renderRegularMode(text: String) {
@@ -680,7 +683,8 @@ class RoomDetailFragment @Inject constructor(
         inviteView.callback = this
     }
 
-    private fun renderState(state: RoomDetailViewState) {
+    override fun invalidate() = withState(roomDetailViewModel) { state ->
+        invalidateOptionsMenu()
         renderRoomSummary(state)
         val summary = state.asyncRoomSummary()
         val inviter = state.asyncInviter()
