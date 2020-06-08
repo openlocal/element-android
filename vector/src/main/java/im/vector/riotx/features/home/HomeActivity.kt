@@ -27,6 +27,7 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
+import com.airbnb.mvrx.viewModel
 import im.vector.matrix.android.api.MatrixCallback
 import im.vector.matrix.android.api.session.Session
 import im.vector.matrix.android.api.util.toMatrixItem
@@ -58,6 +59,8 @@ import javax.inject.Inject
 class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
 
     private lateinit var sharedActionViewModel: HomeSharedActionViewModel
+
+    private val homeActivityViewModel: HomeActivityViewModel by viewModel()
 
     @Inject lateinit var activeSessionHolder: ActiveSessionHolder
     @Inject lateinit var vectorUncaughtExceptionHandler: VectorUncaughtExceptionHandler
@@ -112,7 +115,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
         }
         if (intent.getBooleanExtra(EXTRA_ACCOUNT_CREATION, false)) {
             sharedActionViewModel.post(HomeActivitySharedAction.PromptForSecurityBootstrap)
-            sharedActionViewModel.isAccountCreation = true
+            homeActivityViewModel.isAccountCreation = true
             intent.removeExtra(EXTRA_ACCOUNT_CREATION)
         }
 
@@ -121,7 +124,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
                 waiting_view.isVisible = false
                 promptCompleteSecurityIfNeeded()
             } else {
-                sharedActionViewModel.hasDisplayedCompleteSecurityPrompt = false
+                homeActivityViewModel.hasDisplayedCompleteSecurityPrompt = false
                 Timber.v("${getString(status.statusText)} ${status.percentProgress}")
                 waiting_view.setOnClickListener {
                     // block interactions
@@ -141,7 +144,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
         })
 
         // Ask again if the app is relaunched
-        if (!sharedActionViewModel.hasDisplayedCompleteSecurityPrompt
+        if (!homeActivityViewModel.hasDisplayedCompleteSecurityPrompt
                 && activeSessionHolder.getSafeActiveSession()?.hasAlreadySynced() == true) {
             promptCompleteSecurityIfNeeded()
         }
@@ -153,7 +156,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
     private fun promptCompleteSecurityIfNeeded() {
         val session = activeSessionHolder.getSafeActiveSession() ?: return
         if (!session.hasAlreadySynced()) return
-        if (sharedActionViewModel.hasDisplayedCompleteSecurityPrompt) return
+        if (homeActivityViewModel.hasDisplayedCompleteSecurityPrompt) return
 
         // ensure keys are downloaded
         session.cryptoService().downloadKeys(listOf(session.myUserId), true, object : MatrixCallback<MXUsersDevicesMap<CryptoDeviceInfo>> {
@@ -170,7 +173,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
                 .getMyCrossSigningKeys()
         val crossSigningEnabledOnAccount = myCrossSigningKeys != null
 
-        if (!crossSigningEnabledOnAccount && !sharedActionViewModel.isAccountCreation) {
+        if (!crossSigningEnabledOnAccount && !homeActivityViewModel.isAccountCreation) {
             // Do not propose for SSO accounts, because we do not support yet confirming account credentials using SSO
             if (session.getHomeServerCapabilities().canChangePassword) {
                 // We need to ask
@@ -183,7 +186,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
                 }
             } else {
                 // Do not do it again
-                sharedActionViewModel.hasDisplayedCompleteSecurityPrompt = true
+                homeActivityViewModel.hasDisplayedCompleteSecurityPrompt = true
             }
         } else if (myCrossSigningKeys?.isTrusted() == false) {
             // We need to ask
@@ -198,7 +201,7 @@ class HomeActivity : VectorBaseActivity(), ToolbarConfigurable {
     }
 
     private fun promptSecurityEvent(session: Session, titleRes: Int, descRes: Int, action: ((VectorBaseActivity) -> Unit)) {
-        sharedActionViewModel.hasDisplayedCompleteSecurityPrompt = true
+        homeActivityViewModel.hasDisplayedCompleteSecurityPrompt = true
         popupAlertManager.postVectorAlert(
                 VerificationVectorAlert(
                         uid = "upgradeSecurity",
